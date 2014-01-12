@@ -9,7 +9,7 @@ import urllib2
 from cgi import escape
 import sys, os
 def getCoursesForParameters(year, dist, d1List, d2List, d3List):
-	httpCall="http://courses.rice.edu/admweb/!SWKSECX.main?term=201320&title=&course=&crn=&coll=&dept=&subj=COMP"
+	httpCall="http://courses.rice.edu/admweb/!SWKSECX.main?term="+year
 	response = urllib2.urlopen(httpCall)
 	root = ET.fromstring(response.read())
 	for course in root:
@@ -24,9 +24,10 @@ def getCoursesForParameters(year, dist, d1List, d2List, d3List):
 				d3List.append(course)
 	print d3List
 	
-def getData(): 
+def getData(year): 
 	lines=[]
-	f = open("C:\Users\DavidNichol\Documents\Programs\Python\CourseEvals\data.txt", "r")
+	#YEAH, I KNOW THE BELOW IS SHITTY PROGRAMING I AM GOING TO FIX IT GUYS!
+	f = open("C:\Users\DavidNichol\Documents\Programs\Python\SlackerPlanner\\"+year+".txt", "r")
 
 	for st in f:
 		aList = st.strip().split(', ')
@@ -67,40 +68,55 @@ def dataToHTML(data):
 		returnLines = returnLines + moddedLine
 	return returnLines
 
-def getHeader():
+def getYearForNumber(num):
+	result = ""
+	if num[-2:] == "10":
+		result = result + "Fall"
+	if num[-2:] == "20":
+		result = result + "Spring"
+	if num[-2:] == "30":
+		result = result + "Summer"
+	result += num[:4]
+	return result
+def getHeader(yearList):
+	yearDropDownOptions=""
+	for year in yearList:
+		yearDropDownOptions = yearDropDownOptions + '<option value='+year+' selected="selected">'+getYearForNumber(year)+'</option>'
+	return '<p>Semester<br><select id="semesterDropDown">'+yearDropDownOptions+'</select><p>Distribution Group<br><select id="ddlMyList"><option value="none">None</option><option value="d1.html" selected="selected">I</option><option value="d2.html">II</option><option value="d3.html">III</option></select><button type="button" onclick="navigateToSite()">Click Me!</button><script>function navigateToSite(){var ddl = document.getElementById("ddlMyList");var semDD = document.getElementById("semesterDropDown"); var selectedVal = "../"+semDD.options[semDD.selectedIndex].value+"/"+ddl.options[ddl.selectedIndex].value;window.location = selectedVal;}</script>'
 
-	return '<p>Semester<br><select id="semesterDropDown"><option value="none">None</option><option value="201310" selected="selected">Spring 2013</option></select><p>Distribution Group<br><select id="ddlMyList"><option value="none">None</option><option value="d1.html" selected="selected">I</option><option value="d2.html">II</option><option value="d3.html">III</option></select><button type="button" onclick="navigateToSite()">Click Me!</button><script>function navigateToSite(){var ddl = document.getElementById("ddlMyList");var semDD = document.getElementById("semesterDropDown"); var selectedVal = "../"+semDD.options[semDD.selectedIndex].value+"/"+ddl.options[ddl.selectedIndex].value;window.location = selectedVal;}</script>'
-
-def printToHTML(html, filename):
+def printToHTML(html, filename, yearList):
 	f = open(filename, 'w')
 	f.write("<html><body>")
-	f.write(getHeader())
+	f.write(getHeader(yearList))
 	f.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\">")
 	f.write(html)
 	f.write("</body></html>")
 	f.close()
 	
 def main():
-	year="201310"
-	d1List = []
-	d2List = []
-	d3List = []
-	
-	getCoursesForParameters(year, 1, d1List, d2List, d3List);
-	data = getData()
+	yearList = ["201210", "201320"]
+	for year in yearList:
+		d1List = []
+		d2List = []
+		d3List = []
+		
+		getCoursesForParameters(year, 1, d1List, d2List, d3List);
+		data = getData(year)
+		html = dataToHTML(data)
+		printToHTML(html, year+"/none.html", yearList)
 
-	#get d1
-	distributionCourses = getDataForCourses(data, d1List)
-	html = dataToHTML(distributionCourses)
-	printToHTML(html, year+"/d1.html")
+		#get d1
+		distributionCourses = getDataForCourses(data, d1List)
+		html = dataToHTML(distributionCourses)
+		printToHTML(html, year+"/d1.html", yearList)
 
-	#get d2
-	distributionCourses = getDataForCourses(data, d2List)
-	html = dataToHTML(distributionCourses)
-	printToHTML(html, year+"/d2.html")
-	
-	#get d3
-	distributionCourses = getDataForCourses(data, d3List)
-	html = dataToHTML(distributionCourses)
-	printToHTML(html, year+"/d3.html")
+		#get d2
+		distributionCourses = getDataForCourses(data, d2List)
+		html = dataToHTML(distributionCourses)
+		printToHTML(html, year+"/d2.html", yearList)
+		
+		#get d3
+		distributionCourses = getDataForCourses(data, d3List)
+		html = dataToHTML(distributionCourses)
+		printToHTML(html, year+"/d3.html", yearList)
 main()
